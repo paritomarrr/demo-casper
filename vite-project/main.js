@@ -9,3 +9,8 @@ const btnConnect = document.getElementById("btnConnect");
 btnConnect.addEventListener("click", async () => {
         window.casperlabsHelper.requestConnection();
 })
+
+const btnDisconnect = document.getElementById("btnDisconnect");
+btnDisconnect.addEventListener("click", () => {
+        window.casperlabsHelper.disconnectFromSite();
+})
