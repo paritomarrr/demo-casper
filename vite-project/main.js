@@ -1,19 +1,50 @@
 import {CasperClient,CasperServiceByJsonRPC, CLPublicKey,DeployUtil } from "casper-js-sdk";
+// import {Signer} from "casper-js-sdk/utils/signer"
 
 //Create Casper client and service to interact with Casper node.
 const apiUrl = 'https://rpc.testnet.casperlabs.io/rpc';
-// const casperService = new CasperServiceByJsonRPC(apiUrl);
+const casperService = new CasperServiceByJsonRPC(apiUrl);
 const casperClient = new CasperClient(apiUrl);
+// let request = new XMLHttpRequest();
+// request.setRequestHeader("Access-Control-Allow-Origin", "https://rpc.testnet.casperlabs.io/rpc");
 
 const btnConnect = document.getElementById("btnConnect");
 btnConnect.addEventListener("click", async () => {
         window.casperlabsHelper.requestConnection();
+        await AccountInformation();
 })
 
 const btnDisconnect = document.getElementById("btnDisconnect");
 btnDisconnect.addEventListener("click", () => {
         window.casperlabsHelper.disconnectFromSite();
 })
+
+async function AccountInformation(){
+        const isConnected = await window.casperlabsHelper.isConnected()
+        if(isConnected){
+                const publicKey = await window.casperlabsHelper.getActivePublicKey();
+                textAddress.textContent += publicKey;
+
+                const latestBlock = await casperService.getLatestBlockInfo();
+                const root = await casperService.getStateRootHash(latestBlock.block.hash);
+
+                const balanceUref = await casperService.getAccountBalanceUrefByPublicKey(
+                        root,
+                        CLPublicKey.fromHex(publicKey)
+                        )
+
+                //account balance from the last block
+                const balance = await casperService.getAccountBalance(
+                        latestBlock.block.header.state_root_hash,
+                        balanceUref
+                );
+                textBalance.textContent = `PublicKeyHex ${balance.toString()}`;
+        }
+}
+
+
+
+
 
 async function sendTransaction(){
         // get address to send from input.
@@ -47,13 +78,28 @@ async function sendTransaction(){
         
         // Turn your transaction data to format JSON
         const json = DeployUtil.deployToJson(deploy)
-        
-        // Sign transcation using casper-signer.
+
+
+        // const signer = new Signer(casperClient)
+        // console.log('Singerr', signer)
+        // Sign transcation using caspecr-signer.
         const signature = await window.casperlabsHelper.sign(json,publicKeyHex,to)
-        const deployObject = DeployUtil.deployFromJson(signature)
+        console.log('Signature', signature)
+
         
+        const deployObject = DeployUtil.deployFromJson(signature)
+        console.log('Deploy', deployObject)
+      
+            
+       
         // Here we are sending the signed deploy.
+        const header = deployObject.val.header
+        const paymentt = deployObject.val.payment
+        const sessionn = deployObject.val.session
+        const objctDemo = {header, payment, session}
         const signed = await casperClient.putDeploy(deployObject.val);
+
+        console.log('signed', signed)
         
         // Display transaction address
         const tx = document.getElementById("tx")
